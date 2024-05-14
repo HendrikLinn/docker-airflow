@@ -1,18 +1,19 @@
-# VERSION 1.10.9
-# AUTHOR: Matthieu "Puckel_" Roisil
+# VERSION 1.11.0
+# AUTHOR: Hendrik Linn
 # DESCRIPTION: Basic Airflow container
 # BUILD: docker build --rm -t puckel/docker-airflow .
-# SOURCE: https://github.com/puckel/docker-airflow
+# FORK FROM: https://github.com/puckel/docker-airflow
 
-FROM python:3.7-slim-buster
-LABEL maintainer="Puckel_"
+FROM python:3.11-slim-buster
+# FROM registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021
+LABEL maintainer="Linn_"
 
 # Never prompt the user for choices on installation/configuration of packages
 ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.10.9
+ARG AIRFLOW_VERSION=2.9.0
 ARG AIRFLOW_USER_HOME=/usr/local/airflow
 ARG AIRFLOW_DEPS=""
 ARG PYTHON_DEPS=""
@@ -40,10 +41,12 @@ RUN set -ex \
     ' \
     && apt-get update -yqq \
     && apt-get upgrade -yqq \
-    && apt-get install -yqq --no-install-recommends \
+    && apt-get install -y \
         $buildDeps \
+        python3-dev \
         freetds-bin \
         build-essential \
+        pkg-config \
         default-libmysqlclient-dev \
         apt-utils \
         curl \
@@ -54,17 +57,17 @@ RUN set -ex \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && useradd -ms /bin/bash -d ${AIRFLOW_USER_HOME} airflow \
-    && pip install -U pip setuptools wheel \
+    && pip install setuptools wheel \
     && pip install pytz \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
     && pip install apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
-    && pip install 'redis==3.2' \
+    && pip install 'redis==5.0.4' \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
     && apt-get purge --auto-remove -yqq $buildDeps \
     && apt-get autoremove -yqq --purge \
-    && apt-get clean \
+    && apt-get clean all \
     && rm -rf \
         /var/lib/apt/lists/* \
         /tmp/* \
